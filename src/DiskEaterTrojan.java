@@ -56,6 +56,7 @@ public class DiskEaterTrojan
 			    outStream.write(largerBuffer);
 			}
 			rwChannel.close();
+			outStream.close();
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
